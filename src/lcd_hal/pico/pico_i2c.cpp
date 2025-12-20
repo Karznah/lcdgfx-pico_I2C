@@ -52,10 +52,13 @@ PicoI2c::~PicoI2c()
 
 void PicoI2c::begin()
 {
+
+    i2c_init(PICO_I2C, #FIX baud);
 }
 
 void PicoI2c::end()
 {
+    i2c_deinit(PICO_I2C);
 }
 
 void PicoI2c::start()
@@ -68,10 +71,12 @@ void PicoI2c::stop()
 
 void PicoI2c::send(uint8_t data)
 {
+    i2c_write_blocking(PICO_I2C, m_sa, &data, 1, false);
 }
 
 void PicoI2c::sendBuffer(const uint8_t *buffer, uint16_t size)
 {
+    i2c_write_blocking(PICO_I2C, buffer, size, false);
 }
 
 
