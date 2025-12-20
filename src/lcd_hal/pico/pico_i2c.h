@@ -31,16 +31,18 @@
 
 #pragma once
 
-
 #if defined(PICO_BOARD)
+#include "pico/stdlib.h"
+#include "hardware/i2c.h"
+
 /**
- * Class implements i2c support via Wire library for Arduino platforms
+ * Class implements i2c support for Pico using C/C++ SDK
  */
 class PicoI2c
 {
 public:
     /**
-     * Creates i2c implementation instance for Arduino platform.
+     * Creates i2c implementation instance for Pico platform.
      * @param scl clock pin to use for i2c
      * @param sda data pin to use for i2c
      * @param sa i2c address of the device to control over i2c
