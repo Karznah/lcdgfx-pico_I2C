@@ -35,6 +35,12 @@
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
 
+#if defined(PICO_USE_I2C1)
+#define PICO_I2C i2c1
+#else
+#define PICO_I2C i2c0
+#endif
+
 /**
  * Class implements i2c support for Pico using C/C++ SDK
  */
