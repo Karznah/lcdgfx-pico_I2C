@@ -53,7 +53,7 @@ PicoI2c::~PicoI2c()
 void PicoI2c::begin()
 {
 
-    i2c_init(PICO_I2C, #FIX baud);
+    i2c_init(PICO_I2C, 100.000);
 }
 
 void PicoI2c::end()
@@ -76,7 +76,13 @@ void PicoI2c::send(uint8_t data)
 
 void PicoI2c::sendBuffer(const uint8_t *buffer, uint16_t size)
 {
-    i2c_write_blocking(PICO_I2C, buffer, size, false);
+    if(i2c_get_write_available(PICO_I2C) >= size)
+    {
+        i2c_write_blocking(PICO_I2C, m_sa, buffer, size, false);
+    } else
+    {
+        #warning "attempting to write more data than buffer space"
+    }
 }
 
 
