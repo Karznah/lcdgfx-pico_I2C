@@ -103,10 +103,28 @@ public:
     /**
      * @brief Sets screen orientation (rotation)
      *
-     * Sets screen orientation (rotation): 0 - normal, 1 - 90 CW, 2 - 180 CW, 3 - 270 CW
-     * @param rotation - screen rotation 0 - normal, 1 - 90 CW, 2 - 180 CW, 3 - 270 CW
+     * Sets screen orientation (rotation):
+     * - 0 — normal (portrait)
+     * - 1 — 90° CW (landscape)
+     * - 2 — 180° CW (portrait inverted)
+     * - 3 — 270° CW (landscape inverted)
+     *
+     * @param rotation screen rotation (0–3)
      */
     void setRotation(uint8_t rotation);
+
+    /**
+     * Switches display to normal (non-inverted) mode (sends INVOFF command).
+     * @see invertMode()
+     */
+    void normalMode();
+
+    /**
+     * Switches display to inverted mode (sends INVON command).
+     * Use this to re-enable inversion if normalMode() was called.
+     * @see normalMode()
+     */
+    void invertMode();
 
 private:
     const int8_t m_dc = -1;                      ///< data/command pin for SPI, -1 for i2c
@@ -174,6 +192,7 @@ protected:
      */
     void endController();
 };
+#ifdef CONFIG_LCDGFX_PLATFORM_SPI
 /**
  * Class implements IL9163 128x128x16 lcd display in 16 bit mode over SPI
  */
@@ -187,11 +206,11 @@ public:
      * @param rstPin pin controlling LCD reset (-1 if not used)
      * @param config platform spi configuration. Please refer to SPlatformSpiConfig.
      */
-    explicit DisplayIL9163_128x128x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0, -1, -1})
+    explicit DisplayIL9163_128x128x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0U, -1, -1})
         : DisplayIL9163_128x128x16(m_spi, rstPin)
         , m_spi(*this, config.dc,
                 SPlatformSpiConfig{
-                    config.busId, {config.cs}, config.dc, config.frequency ?: 8000000, config.scl, config.sda})
+                    config.busId, {config.cs}, config.dc, config.frequency ?: static_cast<uint32_t>(8000000), config.scl, config.sda})
     {
     }
 
@@ -208,6 +227,7 @@ public:
 private:
     InterfaceIL9163<PlatformSpi> m_spi;
 };
+#endif
 
 /**
  * Template class implements IL9163 128x128x16 lcd display in 16 bit mode over custom SPI implementation
@@ -280,6 +300,7 @@ protected:
      */
     void endController();
 };
+#ifdef CONFIG_LCDGFX_PLATFORM_SPI
 /**
  * Class implements IL9163 128x160x16 lcd display in 16 bit mode over SPI
  */
@@ -293,11 +314,11 @@ public:
      * @param rstPin pin controlling LCD reset (-1 if not used)
      * @param config platform spi configuration. Please refer to SPlatformSpiConfig.
      */
-    explicit DisplayIL9163_128x160x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0, -1, -1})
+    explicit DisplayIL9163_128x160x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0U, -1, -1})
         : DisplayIL9163_128x160x16(m_spi, rstPin)
         , m_spi(*this, config.dc,
                 SPlatformSpiConfig{
-                    config.busId, {config.cs}, config.dc, config.frequency ?: 8000000, config.scl, config.sda})
+                    config.busId, {config.cs}, config.dc, config.frequency ?: static_cast<uint32_t>(8000000), config.scl, config.sda})
     {
     }
 
@@ -314,6 +335,7 @@ public:
 private:
     InterfaceIL9163<PlatformSpi> m_spi;
 };
+#endif
 
 /**
  * Template class implements IL9163 128x160x16 lcd display in 16 bit mode over custom SPI implementation

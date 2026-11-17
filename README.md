@@ -6,6 +6,8 @@
 [![Doc Status](.travis/code_documented.svg)](https://codedocs.xyz/lexus2k/lcdgfx)
 ![GitHub](https://img.shields.io/github/license/lexus2k/lcdgfx)
 
+> **What's new in 1.3.0:** new GUI widgets (`LcdGfxSlider`, `LcdGfxSpinbox`, `LcdGfxTextEntry`), XPT2046 resistive touch driver with menu integration, UTF-8 / Cyrillic rendering, `lcdgfx::color` `constexpr` helpers, opt-in C++14/17 build, plus SSD1325 `fillRect` and Linux sysfs-GPIO fixes. See [CHANGELOG.md](CHANGELOG.md).
+
 
 [tocstart]: # (toc start)
 
@@ -73,6 +75,11 @@ void loop()
    * spi (4-wire spi via Arduino SPI library, AVR Spi, AVR USI module)
  * Primitive graphics functions (lines, rectangles, pixels, bitmaps, drawing canvas)
  * Printing text to display (using fonts of different size, [How to add new fonts](https://github.com/lexus2k/lcdgfx/wiki/How-to-create-new-font-for-the-library), [Useful tools](#useful-tools))
+ * UTF-8 / Cyrillic text rendering via secondary fonts (e.g. `ssd1306xled_font6x8_Cyrillic`); stateless `nano_utf8_decode()` helper for re-entrant code.
+ * Built-in GUI widgets: `LcdGfxMenu` (key- and touch-driven), `LcdGfxCheckboxMenu`, `LcdGfxButton`, `LcdGfxSlider`, `LcdGfxSpinbox`, `LcdGfxTextEntry`, `LcdGfxYesNo`.
+ * Resistive touch input via `LcdGfxXpt2046` (XPT2046 controller) with `TouchCalibration` helper.
+ * `lcdgfx::color` `constexpr` helpers (`to_rgb565`, `to_rgb332`, `from_rgb`, `gray`) for compile-time colour math.
+ * Drop-in [Adafruit_GFX-compatible API](docs/gfx_compat.md) (`GfxCompat`) — run existing Adafruit GFX sketches on any lcdgfx display, including `GFXfont` custom fonts, with no external library.
  * Includes [graphics engine](https://github.com/lexus2k/lcdgfx/wiki/Using-NanoEngine-for-systems-with-low-resources2) to support
    double buffering on tiny microcontrollers.
  * Can be used for game development (bonus examples):
@@ -138,6 +145,19 @@ If you found any problem or have any idea, please, report to Issues section.
 | pcd8544 84x48 |   | X  |   | Nokia 5110 |
 | any other custom |  |  |  | Refer to [custom display example](examples/interfaces/custom_display/custom_display.ino) |
 
+For a detailed per-controller capability matrix (rotation type, contrast, hardware
+scroll, invert, status of known issues, etc.), see
+[docs/controller_matrix.md](docs/controller_matrix.md).
+
+Additional documentation:
+
+ * [GUI widgets overview](docs/gui_widgets.md) — menu, slider, spinbox, text entry, etc.
+ * [Adafruit_GFX compatibility (`GfxCompat`)](docs/gfx_compat.md) — port Adafruit GFX code, custom `GFXfont` support.
+ * [Touch input (XPT2046)](docs/touch.md) — wiring, calibration, code sample.
+ * [Fonts: generating & format reference](docs/font_format.md) — `fontgenerator.py` usage, per-group widths, binary layout.
+ * [v1 → v2 migration guide](docs/migration_v1_v2.md).
+ * [Changelog](CHANGELOG.md).
+
 ## Supported platforms
 
 Compilers: gcc, clang
@@ -181,13 +201,22 @@ Digispark users, please check compilation options in your Arduino prior to using
 lcdgfx library requires at least c++11 and c99 (by default Digispark package misses the options
 -std=gnu11, -std=gnu++11).
 
+The library is C++11 by default, but builds and tests cleanly under C++14 and C++17 as well.
+When building from the Makefile you can opt in to a newer standard via
+`make ARCH=linux SDL_EMULATION=y CXXSTD=c++17 check`. CI verifies all three standards
+(C++11 / C++14 / C++17) on every push.
+
 ## Useful tools
 
 [Tim's Image Pixel Editor](https://tims-pc-applications.blogspot.com/2020/05/tims-image-pixel-editor.html)
 This is a little application made by Tim Jackson to edit and create Images and fonts for the small monochrome displays.
 
-[Built-in font generator](https://github.com/lexus2k/lcdgfx/wiki/How-to-create-new-font-for-the-library)
-Lcdgfx library has built-in Python script to generate lcd fonts from ttf files.
+[Built-in font generator](docs/font_format.md)
+Lcdgfx library has built-in Python script (`tools/fontgenerator.py`) to generate
+lcd fonts from ttf files. See [docs/font_format.md](docs/font_format.md) for
+usage, per-group widths and the binary format; the
+[wiki tutorial](https://github.com/lexus2k/lcdgfx/wiki/How-to-create-new-font-for-the-library)
+has a step-by-step walkthrough.
 
 [Font format converter from bdf fonts by mayopan](https://github.com/mayopan/bdf2lcdgfx)
 Font format converter that converts bdf font to lcdgfx c style free

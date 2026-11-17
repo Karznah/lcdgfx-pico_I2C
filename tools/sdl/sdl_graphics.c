@@ -191,10 +191,14 @@ void sdl_graphics_set_oled_params(int width, int height, int bpp, uint32_t pixfm
     {
         SDL_DestroyTexture( g_texture );
         g_texture = NULL;
-        free(g_pixels);
-        g_pixels = NULL;
     }
+    free(g_pixels);
+    g_pixels = NULL;
     g_pixels = malloc(s_width * s_height * (s_bpp / 8));
+    if ( g_pixels )
+    {
+        memset(g_pixels, 0, s_width * s_height * (s_bpp / 8));
+    }
     if ( s_unittest_mode )
     {
         return;
@@ -278,7 +282,23 @@ void sdl_graphics_close(void)
     {
         return;
     }
-    SDL_DestroyWindow(g_window);
+    if (g_texture)
+    {
+        SDL_DestroyTexture(g_texture);
+        g_texture = NULL;
+    }
+    if (g_renderer)
+    {
+        SDL_DestroyRenderer(g_renderer);
+        g_renderer = NULL;
+    }
+    if (g_window)
+    {
+        SDL_DestroyWindow(g_window);
+        g_window = NULL;
+    }
+    free(g_pixels);
+    g_pixels = NULL;
 }
 
 static uint32_t convert_pixel( uint32_t value, uint8_t target_bpp )

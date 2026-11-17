@@ -167,6 +167,7 @@ protected:
      */
     void endController();
 };
+#ifdef CONFIG_LCDGFX_PLATFORM_SPI
 /**
  * Class implements PCD8544 84x48 lcd display in 1 bit mode over SPI
  */
@@ -180,11 +181,11 @@ public:
      * @param rstPin pin controlling LCD reset (-1 if not used)
      * @param config platform spi configuration. Please refer to SPlatformSpiConfig.
      */
-    explicit DisplayPCD8544_84x48_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0, -1, -1})
+    explicit DisplayPCD8544_84x48_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0U, -1, -1})
         : DisplayPCD8544_84x48(m_spi, rstPin)
         , m_spi(*this, config.dc,
                 SPlatformSpiConfig{
-                    config.busId, {config.cs}, config.dc, config.frequency ?: 4000000, config.scl, config.sda})
+                    config.busId, {config.cs}, config.dc, config.frequency ?: static_cast<uint32_t>(4000000), config.scl, config.sda})
     {
     }
 
@@ -201,6 +202,7 @@ public:
 private:
     InterfacePCD8544<PlatformSpi> m_spi;
 };
+#endif
 
 /**
  * Template class implements PCD8544 84x48 lcd display in 1 bit mode over custom SPI implementation

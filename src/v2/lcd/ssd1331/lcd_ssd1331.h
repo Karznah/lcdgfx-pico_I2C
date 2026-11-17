@@ -105,8 +105,13 @@ public:
     /**
      * @brief Sets screen orientation (rotation)
      *
-     * Sets screen orientation (rotation): 0 - normal, 1 - 90 CW, 2 - 180 CW, 3 - 270 CW
-     * @param rotation - screen rotation 0 - normal, 1 - 90 CW, 2 - 180 CW, 3 - 270 CW
+     * Sets screen orientation (rotation):
+     * - 0 — normal (portrait)
+     * - 1 — 90° CW (landscape)
+     * - 2 — 180° CW (portrait inverted)
+     * - 3 — 270° CW (landscape inverted)
+     *
+     * @param rotation screen rotation (0–3)
      */
     void setRotation(uint8_t rotation);
 
@@ -139,6 +144,13 @@ public:
      *       oled display to become ready to accept new commands.
      */
     void copyBlock(uint8_t left, uint8_t top, uint8_t right, uint8_t bottom, uint8_t newLeft, uint8_t newTop);
+
+    /**
+     * Set display contrast for all RGB channels uniformly.
+     * Sets the same contrast value for Red, Green and Blue channels.
+     * @param contrast - contrast value to set, refer to SSD1331 datasheet
+     */
+    void setContrast(uint8_t contrast);
 
 private:
     const uint8_t m_bits;
@@ -206,6 +218,7 @@ protected:
      */
     void endController();
 };
+#ifdef CONFIG_LCDGFX_PLATFORM_SPI
 /**
  * Class implements SSD1331 96x64x8 lcd display in 8 bit mode over SPI
  */
@@ -219,11 +232,11 @@ public:
      * @param rstPin pin controlling LCD reset (-1 if not used)
      * @param config platform spi configuration. Please refer to SPlatformSpiConfig.
      */
-    explicit DisplaySSD1331_96x64x8_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0, -1, -1})
+    explicit DisplaySSD1331_96x64x8_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0U, -1, -1})
         : DisplaySSD1331_96x64x8(m_spi, rstPin)
         , m_spi(8, *this, config.dc,
                 SPlatformSpiConfig{
-                    config.busId, {config.cs}, config.dc, config.frequency ?: 6000000, config.scl, config.sda})
+                    config.busId, {config.cs}, config.dc, config.frequency ?: static_cast<uint32_t>(6000000), config.scl, config.sda})
     {
     }
 
@@ -240,6 +253,7 @@ public:
 private:
     InterfaceSSD1331<PlatformSpi> m_spi;
 };
+#endif
 
 /**
  * Template class implements SSD1331 96x64x8 lcd display in 8 bit mode over custom SPI implementation
@@ -344,6 +358,7 @@ protected:
      */
     void endController();
 };
+#ifdef CONFIG_LCDGFX_PLATFORM_SPI
 /**
  * Class implements SSD1331 96x64x16 lcd display in 16 bit mode over SPI
  */
@@ -357,11 +372,11 @@ public:
      * @param rstPin pin controlling LCD reset (-1 if not used)
      * @param config platform spi configuration. Please refer to SPlatformSpiConfig.
      */
-    explicit DisplaySSD1331_96x64x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0, -1, -1})
+    explicit DisplaySSD1331_96x64x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0U, -1, -1})
         : DisplaySSD1331_96x64x16(m_spi, rstPin)
         , m_spi(16, *this, config.dc,
                 SPlatformSpiConfig{
-                    config.busId, {config.cs}, config.dc, config.frequency ?: 6000000, config.scl, config.sda})
+                    config.busId, {config.cs}, config.dc, config.frequency ?: static_cast<uint32_t>(6000000), config.scl, config.sda})
     {
     }
 
@@ -378,6 +393,7 @@ public:
 private:
     InterfaceSSD1331<PlatformSpi> m_spi;
 };
+#endif
 
 /**
  * Template class implements SSD1331 96x64x16 lcd display in 16 bit mode over custom SPI implementation

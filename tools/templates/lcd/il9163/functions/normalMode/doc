@@ -1,0 +1,4 @@
+    /**
+     * Switches display to normal (non-inverted) mode (sends INVOFF command).
+     * @see invertMode()
+     */

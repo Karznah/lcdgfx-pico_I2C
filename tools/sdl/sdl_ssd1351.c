@@ -24,6 +24,7 @@
 
 #include "sdl_ssd1351.h"
 #include "sdl_oled_basic.h"
+#include "sdl_emulator_common.h"
 #include "sdl_graphics.h"
 #include "sdl_core.h"
 
@@ -38,6 +39,11 @@ static uint8_t s_topToBottom = 0;
 static uint8_t s_leftToRight = 0;
 static uint8_t detected = 0;
 static uint8_t s_rgbMode = 0;
+
+static void sdl_ssd1351_reset(void)
+{
+    detected = 0;
+}
 
 
 static int sdl_ssd1351_detect(uint8_t data)
@@ -103,6 +109,30 @@ static void sdl_ssd1351_process_data(uint8_t data)
                 s_commandId = SSD_COMMAND_NONE;
             }
             break;
+        // 1-arg config commands: consume argument to avoid misinterpretation
+        case 0xA1: // Display Start Line
+        case 0xA2: // Display Offset
+        case 0xAB: // Function Selection
+        case 0xB1: // Phase Length
+        case 0xB3: // Front Clock Divider
+        case 0xB5: // Set GPIO
+        case 0xB6: // Second Pre-charge Period
+        case 0xBB: // Pre-charge Voltage
+        case 0xBE: // VCOMH Voltage
+        case 0xC7: // Master Contrast Current
+        case 0xCA: // Set MUX Ratio
+        case 0xFD: // Command Lock
+            if ( s_cmdArgIndex == 0 )
+            {
+                s_commandId = SSD_COMMAND_NONE;
+            }
+            break;
+        case 0xC1: // Set Contrast (3 args)
+            if ( s_cmdArgIndex == 2 )
+            {
+                s_commandId = SSD_COMMAND_NONE;
+            }
+            break;
         default:
             s_commandId = SSD_COMMAND_NONE;
             break;
@@ -134,32 +164,9 @@ void sdl_ssd1351_data(uint8_t data)
     firstByte = 1;
     sdl_put_pixel(x, y, s_rgbMode ? ((dataFirst<<8) | data) : ((data<<8) | dataFirst));
 
-    if (s_incrementMode)
-    {
-        s_activePage++;
-        if (s_activePage > s_pageEnd)
-        {
-            s_activePage = s_pageStart;
-            s_activeColumn++;
-            if (s_activeColumn > s_columnEnd)
-            {
-                s_activeColumn = s_columnStart;
-            }
-        }
-    }
-    else
-    {
-        s_activeColumn++;
-        if (s_activeColumn > s_columnEnd)
-        {
-            s_activeColumn = s_columnStart;
-            s_activePage++;
-            if (s_activePage > s_pageEnd)
-            {
-                s_activePage = s_pageStart;
-            }
-        }
-    }
+    sdl_emu_advance_xy(&s_activeColumn, &s_activePage,
+                       s_columnStart, s_columnEnd, s_pageStart, s_pageEnd,
+                       s_incrementMode);
 }
 
 sdl_oled_info sdl_ssd1351 =
@@ -172,4 +179,5 @@ sdl_oled_info sdl_ssd1351 =
     .detect = sdl_ssd1351_detect,
     .run_cmd = sdl_ssd1351_commands,
     .run_data = sdl_ssd1351_data,
+    .reset = sdl_ssd1351_reset,
 };
