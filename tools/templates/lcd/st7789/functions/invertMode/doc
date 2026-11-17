@@ -1,0 +1,6 @@
+    /**
+     * Switches display to inverted mode (sends INVON command).
+     * Most ST7789 panels require INVON for correct colors (this is the default).
+     * Use this to re-enable inversion if normalMode() was called.
+     * @see normalMode()
+     */

@@ -50,6 +50,16 @@ jobs:
           ./.travis/run_unit_tests.sh clang
           make cppcheck
 
+      - name: Building and testing under C++14
+        run: |
+          make clean
+          make ARCH=linux SDL_EMULATION=y CXXSTD=c++14 check
+
+      - name: Building and testing under C++17
+        run: |
+          make clean
+          make ARCH=linux SDL_EMULATION=y CXXSTD=c++17 check
+
       - name: Building for AVR
         run: |
           make clean
@@ -72,3 +82,9 @@ jobs:
         run: |
           . ~/esp/esp-idf/export.sh
           make -C examples -f Makefile.esp32 PROJECT=demos/ssd1306_demo
+      - name: Building ESP32 code with SPI DMA enabled
+        run: |
+          . ~/esp/esp-idf/export.sh
+          # Fresh build dir so CMake reconfigures with the injected define
+          rm -rf bld/esp32
+          make -C examples -f Makefile.esp32 PROJECT=demos/ssd1306_demo EXTRA_DEFS=CONFIG_ESP32_SPI_DMA_ENABLE

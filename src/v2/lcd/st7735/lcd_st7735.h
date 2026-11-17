@@ -103,8 +103,13 @@ public:
     /**
      * @brief Sets screen orientation (rotation)
      *
-     * Sets screen orientation (rotation): 0 - normal, 1 - 90 CW, 2 - 180 CW, 3 - 270 CW
-     * @param rotation - screen rotation 0 - normal, 1 - 90 CW, 2 - 180 CW, 3 - 270 CW
+     * Sets screen orientation (rotation):
+     * - 0 — normal (portrait)
+     * - 1 — 90° CW (landscape)
+     * - 2 — 180° CW (portrait inverted)
+     * - 3 — 270° CW (landscape inverted)
+     *
+     * @param rotation screen rotation (0–3)
      */
     void setRotation(uint8_t rotation);
 
@@ -121,10 +126,10 @@ public:
     void setOffset(lcdint_t ox, lcdint_t oy);
 
     /**
-     * @brief Sets RGB mode used by dispay controller.
+     * @brief Sets RGB mode used by display controller.
      *
-     * Sets RGB mode used by display controller. 0 - for BGR, 1 - for RGB
-     * @param mode rgb mode for SSD1351 controller: 0 - BGR, 1 - RGB
+     * Sets RGB mode used by display controller.
+     * @param mode 0 for BGR color order, 1 for RGB color order
      */
     void setRgbMode(uint8_t mode);
 
@@ -196,6 +201,7 @@ protected:
      */
     void endController();
 };
+#ifdef CONFIG_LCDGFX_PLATFORM_SPI
 /**
  * Class implements ST7735 128x128x16 lcd display in 16 bit mode over SPI
  */
@@ -209,11 +215,11 @@ public:
      * @param rstPin pin controlling LCD reset (-1 if not used)
      * @param config platform spi configuration. Please refer to SPlatformSpiConfig.
      */
-    explicit DisplayST7735_128x128x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0, -1, -1})
+    explicit DisplayST7735_128x128x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0U, -1, -1})
         : DisplayST7735_128x128x16(m_spi, rstPin)
         , m_spi(*this, config.dc,
                 SPlatformSpiConfig{
-                    config.busId, {config.cs}, config.dc, config.frequency ?: 8000000, config.scl, config.sda})
+                    config.busId, {config.cs}, config.dc, config.frequency ?: static_cast<uint32_t>(8000000), config.scl, config.sda})
     {
     }
 
@@ -230,6 +236,7 @@ public:
 private:
     InterfaceST7735<PlatformSpi> m_spi;
 };
+#endif
 
 /**
  * Template class implements ST7735 128x128x16 lcd display in 16 bit mode over custom SPI implementation
@@ -302,6 +309,7 @@ protected:
      */
     void endController();
 };
+#ifdef CONFIG_LCDGFX_PLATFORM_SPI
 /**
  * Class implements ST7735 80x160x16 lcd display in 16 bit mode over SPI
  */
@@ -315,11 +323,11 @@ public:
      * @param rstPin pin controlling LCD reset (-1 if not used)
      * @param config platform spi configuration. Please refer to SPlatformSpiConfig.
      */
-    explicit DisplayST7735_80x160x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0, -1, -1})
+    explicit DisplayST7735_80x160x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0U, -1, -1})
         : DisplayST7735_80x160x16(m_spi, rstPin)
         , m_spi(*this, config.dc,
                 SPlatformSpiConfig{
-                    config.busId, {config.cs}, config.dc, config.frequency ?: 8000000, config.scl, config.sda})
+                    config.busId, {config.cs}, config.dc, config.frequency ?: static_cast<uint32_t>(8000000), config.scl, config.sda})
     {
     }
 
@@ -336,6 +344,7 @@ public:
 private:
     InterfaceST7735<PlatformSpi> m_spi;
 };
+#endif
 
 /**
  * Template class implements ST7735 80x160x16 lcd display in 16 bit mode over custom SPI implementation
@@ -408,6 +417,7 @@ protected:
      */
     void endController();
 };
+#ifdef CONFIG_LCDGFX_PLATFORM_SPI
 /**
  * Class implements ST7735 128x160x16 lcd display in 16 bit mode over SPI
  */
@@ -421,11 +431,11 @@ public:
      * @param rstPin pin controlling LCD reset (-1 if not used)
      * @param config platform spi configuration. Please refer to SPlatformSpiConfig.
      */
-    explicit DisplayST7735_128x160x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0, -1, -1})
+    explicit DisplayST7735_128x160x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0U, -1, -1})
         : DisplayST7735_128x160x16(m_spi, rstPin)
         , m_spi(*this, config.dc,
                 SPlatformSpiConfig{
-                    config.busId, {config.cs}, config.dc, config.frequency ?: 8000000, config.scl, config.sda})
+                    config.busId, {config.cs}, config.dc, config.frequency ?: static_cast<uint32_t>(8000000), config.scl, config.sda})
     {
     }
 
@@ -442,6 +452,7 @@ public:
 private:
     InterfaceST7735<PlatformSpi> m_spi;
 };
+#endif
 
 /**
  * Template class implements ST7735 128x160x16 lcd display in 16 bit mode over custom SPI implementation

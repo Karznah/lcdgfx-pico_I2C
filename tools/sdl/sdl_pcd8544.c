@@ -24,6 +24,7 @@
 
 #include "sdl_pcd8544.h"
 #include "sdl_oled_basic.h"
+#include "sdl_emulator_common.h"
 #include "sdl_graphics.h"
 #include "sdl_core.h"
 
@@ -35,6 +36,11 @@ const static int s_pageStart = 0;
 const static int s_pageEnd = 5;
 static int s_verticalMode = 0;
 static uint8_t detected = 0;
+
+static void sdl_pcd8544_reset(void)
+{
+    detected = 0;
+}
 
 
 static int sdl_pcd8544_detect(uint8_t data)
@@ -92,21 +98,9 @@ void sdl_pcd8544_data(uint8_t data)
         }
     }
     if (s_verticalMode)
-    {
-        s_activePage++;
-        if (s_activePage > s_pageEnd)
-        {
-            s_activePage = s_pageStart;
-        }
-    }
+        sdl_emu_advance_single(&s_activePage, s_pageStart, s_pageEnd);
     else
-    {
-        s_activeColumn++;
-        if (s_activeColumn > s_columnEnd)
-        {
-            s_activeColumn = s_columnStart;
-        }
-    }
+        sdl_emu_advance_single(&s_activeColumn, s_columnStart, s_columnEnd);
 }
 
 sdl_oled_info sdl_pcd8544 =
@@ -119,4 +113,5 @@ sdl_oled_info sdl_pcd8544 =
     .detect = sdl_pcd8544_detect,
     .run_cmd = sdl_pcd8544_commands,
     .run_data = sdl_pcd8544_data,
+    .reset = sdl_pcd8544_reset,
 };

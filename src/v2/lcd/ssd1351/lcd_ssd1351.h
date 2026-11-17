@@ -103,8 +103,13 @@ public:
     /**
      * @brief Sets screen orientation (rotation)
      *
-     * Sets screen orientation (rotation): 0 - normal, 1 - 90 CW, 2 - 180 CW, 3 - 270 CW
-     * @param rotation - screen rotation 0 - normal, 1 - 90 CW, 2 - 180 CW, 3 - 270 CW
+     * Sets screen orientation (rotation):
+     * - 0 — normal (portrait)
+     * - 1 — 90° CW (landscape)
+     * - 2 — 180° CW (portrait inverted)
+     * - 3 — 270° CW (landscape inverted)
+     *
+     * @param rotation screen rotation (0–3)
      */
     void setRotation(uint8_t rotation);
 
@@ -121,12 +126,19 @@ public:
     void setOffset(lcdint_t ox, lcdint_t oy);
 
     /**
-     * @brief Sets RGB mode used by dispay controller.
+     * @brief Sets RGB mode used by display controller.
      *
-     * Sets RGB mode used by display controller. 0 - for BGR, 1 - for RGB
-     * @param mode rgb mode for SSD1351 controller: 0 - BGR, 1 - RGB
+     * Sets RGB mode used by display controller.
+     * @param mode 0 for BGR color order, 1 for RGB color order
      */
     void setRgbMode(uint8_t mode);
+
+    /**
+     * Set display contrast for all RGB channels uniformly.
+     * Sets the same contrast value for Red, Green and Blue channels.
+     * @param contrast - contrast value to set, refer to SSD1351 datasheet
+     */
+    void setContrast(uint8_t contrast);
 
 private:
     const int8_t m_dc = -1;                            ///< data/command pin for SPI, -1 for i2c
@@ -196,6 +208,7 @@ protected:
      */
     void endController();
 };
+#ifdef CONFIG_LCDGFX_PLATFORM_SPI
 /**
  * Class implements SSD1351 128x128x16 lcd display in 16 bit mode over SPI
  */
@@ -209,11 +222,11 @@ public:
      * @param rstPin pin controlling LCD reset (-1 if not used)
      * @param config platform spi configuration. Please refer to SPlatformSpiConfig.
      */
-    explicit DisplaySSD1351_128x128x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0, -1, -1})
+    explicit DisplaySSD1351_128x128x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0U, -1, -1})
         : DisplaySSD1351_128x128x16(m_spi, rstPin)
         , m_spi(*this, config.dc,
                 SPlatformSpiConfig{
-                    config.busId, {config.cs}, config.dc, config.frequency ?: 4400000, config.scl, config.sda})
+                    config.busId, {config.cs}, config.dc, config.frequency ?: static_cast<uint32_t>(4400000), config.scl, config.sda})
     {
     }
 
@@ -230,6 +243,7 @@ public:
 private:
     InterfaceSSD1351<PlatformSpi> m_spi;
 };
+#endif
 
 /**
  * Template class implements SSD1351 128x128x16 lcd display in 16 bit mode over custom SPI implementation
@@ -302,6 +316,7 @@ protected:
      */
     void endController();
 };
+#ifdef CONFIG_LCDGFX_PLATFORM_SPI
 /**
  * Class implements SSD1351 96x96x16 lcd display in 16 bit mode over SPI
  */
@@ -315,11 +330,11 @@ public:
      * @param rstPin pin controlling LCD reset (-1 if not used)
      * @param config platform spi configuration. Please refer to SPlatformSpiConfig.
      */
-    explicit DisplaySSD1351_96x96x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0, -1, -1})
+    explicit DisplaySSD1351_96x96x16_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0U, -1, -1})
         : DisplaySSD1351_96x96x16(m_spi, rstPin)
         , m_spi(*this, config.dc,
                 SPlatformSpiConfig{
-                    config.busId, {config.cs}, config.dc, config.frequency ?: 4400000, config.scl, config.sda})
+                    config.busId, {config.cs}, config.dc, config.frequency ?: static_cast<uint32_t>(4400000), config.scl, config.sda})
     {
     }
 
@@ -336,6 +351,7 @@ public:
 private:
     InterfaceSSD1351<PlatformSpi> m_spi;
 };
+#endif
 
 /**
  * Template class implements SSD1351 96x96x16 lcd display in 16 bit mode over custom SPI implementation

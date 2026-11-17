@@ -542,41 +542,60 @@ template <class O, class I> void NanoDisplayOps<O, I>::drawLine(lcdint_t x1, lcd
     lcduint_t err = 0;
     if ( dy > dx )
     {
+        // Steep line: the column (x) stays constant across runs of consecutive
+        // rows. Emit each same-column run as a single drawVLine so the bus is
+        // addressed once per run rather than once per pixel. On 1-bit page
+        // addressed controllers this also renders the run correctly - per-pixel
+        // putPixel would rewrite the shared page byte and clobber earlier pixels.
         if ( y1 > y2 )
         {
             ssd1306_swap_data(x1, x2, lcdint_t);
             ssd1306_swap_data(y1, y2, lcdint_t);
         }
+        lcdint_t runStart = y1;
         for ( ; y1 <= y2; y1++ )
         {
             err += dx;
             if ( err >= dy )
             {
                 err -= dy;
+                this->drawVLine(x1, runStart, y1);
                 x1 < x2 ? x1++ : x1--;
+                runStart = y1 + 1;
             }
-            this->putPixel(x1, y1);
+        }
+        if ( runStart <= y2 )
+        {
+            this->drawVLine(x1, runStart, y2);
         }
     }
     else
     {
+        // Shallow line: the row (y) stays constant across runs of consecutive
+        // columns. Emit each same-row run as a single drawHLine.
         if ( x1 > x2 )
         {
             ssd1306_swap_data(x1, x2, lcdint_t);
             ssd1306_swap_data(y1, y2, lcdint_t);
         }
+        lcdint_t runStart = x1;
         for ( ; x1 <= x2; x1++ )
         {
             err += dy;
             if ( err >= dx )
             {
                 err -= dx;
+                this->drawHLine(runStart, y1, x1);
                 if ( y1 < y2 )
                     y1++;
                 else
                     y1--;
+                runStart = x1 + 1;
             }
-            this->putPixel(x1, y1);
+        }
+        if ( runStart <= x2 )
+        {
+            this->drawHLine(runStart, y1, x2);
         }
     }
 }
@@ -589,6 +608,19 @@ template <class O, class I> void NanoDisplayOps<O, I>::drawLine(const NanoRect &
 template <class O, class I> void NanoDisplayOps<O, I>::fillRect(const NanoRect &rect)
 {
     this->fillRect(rect.p1.x, rect.p1.y, rect.p2.x, rect.p2.y);
+}
+
+template <class O, class I> void NanoDisplayOps<O, I>::clearRect(lcdint_t x1, lcdint_t y1, lcdint_t x2, lcdint_t y2)
+{
+    uint16_t old_color = this->getColor();
+    this->setColor(0x0000);
+    this->fillRect(x1, y1, x2, y2);
+    this->setColor(old_color);
+}
+
+template <class O, class I> void NanoDisplayOps<O, I>::clearRect(const NanoRect &rect)
+{
+    this->clearRect(rect.p1.x, rect.p1.y, rect.p2.x, rect.p2.y);
 }
 
 template <class O, class I> void NanoDisplayOps<O, I>::drawCircle(lcdint_t xc, lcdint_t yc, lcdint_t r, uint8_t options)

@@ -24,6 +24,7 @@
 
 #include "sdl_il9163.h"
 #include "sdl_oled_basic.h"
+#include "sdl_emulator_common.h"
 #include "sdl_graphics.h"
 #include "sdl_core.h"
 
@@ -41,10 +42,22 @@ static int s_colConnection = 0;
 static int s_rowConnection = 0;
 static int TOTAL_COLUMNS = 132;
 static int TOTAL_ROWS = 160;
+static uint8_t s_verticalMode = 0;
 
 static void sdl_il9163_reset(void)
 {
     detected = 0;
+    s_colConnection = 0;
+    s_rowConnection = 0;
+    TOTAL_COLUMNS = 132;
+    TOTAL_ROWS = 160;
+    s_verticalMode = 0;
+    s_activeColumn = 0;
+    s_activePage = 0;
+    s_columnStart = 0;
+    s_columnEnd = 127;
+    s_pageStart = 0;
+    s_pageEnd = 7;
 }
 
 static int sdl_il9163_detect(uint8_t data)
@@ -88,8 +101,6 @@ static int sdl_il9163_detect(uint8_t data)
     detected = (data == SDL_LCD_IL9163) || (data == SDL_LCD_ST7735) || (data == SDL_LCD_ST7789);
     return 0;
 }
-
-static uint8_t s_verticalMode = 0;
 
 static void sdl_il9163_commands(uint8_t data)
 {
@@ -266,32 +277,9 @@ void sdl_il9163_data(uint8_t data)
         sdl_put_pixel(rx - s_colConnection, ry - s_rowConnection, (dataFirst<<8) | data);
     }
 
-    if (s_verticalMode & 0b00100000)
-    {
-        s_activePage++;
-        if (s_activePage > s_pageEnd)
-        {
-            s_activePage = s_pageStart;
-            s_activeColumn++;
-            if (s_activeColumn > s_columnEnd)
-            {
-                s_activeColumn = s_columnStart;
-            }
-        }
-    }
-    else
-    {
-        s_activeColumn++;
-        if (s_activeColumn > s_columnEnd)
-        {
-            s_activeColumn = s_columnStart;
-            s_activePage++;
-            if (s_activePage > s_pageEnd)
-            {
-                s_activePage = s_pageStart;
-            }
-        }
-    }
+    sdl_emu_advance_xy(&s_activeColumn, &s_activePage,
+                       s_columnStart, s_columnEnd, s_pageStart, s_pageEnd,
+                       s_verticalMode & 0x20);
 }
 
 sdl_oled_info sdl_il9163 =

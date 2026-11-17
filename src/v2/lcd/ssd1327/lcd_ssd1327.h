@@ -100,6 +100,12 @@ public:
      */
     void commandStart();
 
+    /**
+     * Set display contrast, ie light intensity
+     * @param contrast - contrast value to set, refer to SSD1327 datasheet
+     */
+    void setContrast(uint8_t contrast);
+
 private:
     const int8_t m_dc = -1;                            ///< data/command pin for SPI, -1 for i2c
     NanoDisplayBase<InterfaceSSD1327<I>> &m_base; ///< basic lcd display support interface
@@ -164,6 +170,7 @@ protected:
      */
     void endController();
 };
+#ifdef CONFIG_LCDGFX_PLATFORM_SPI
 /**
  * Class implements SSD1327 128x128 lcd display in 4 bit mode over SPI
  */
@@ -177,11 +184,11 @@ public:
      * @param rstPin pin controlling LCD reset (-1 if not used)
      * @param config platform spi configuration. Please refer to SPlatformSpiConfig.
      */
-    explicit DisplaySSD1327_128x128_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0, -1, -1})
+    explicit DisplaySSD1327_128x128_SPI(int8_t rstPin, const SPlatformSpiConfig &config = {-1, {-1}, -1, 0U, -1, -1})
         : DisplaySSD1327_128x128(m_spi, rstPin)
         , m_spi(*this, config.dc,
                 SPlatformSpiConfig{
-                    config.busId, {config.cs}, config.dc, config.frequency ?: 10000000, config.scl, config.sda})
+                    config.busId, {config.cs}, config.dc, config.frequency ?: static_cast<uint32_t>(10000000), config.scl, config.sda})
     {
     }
 
@@ -198,6 +205,7 @@ public:
 private:
     InterfaceSSD1327<PlatformSpi> m_spi;
 };
+#endif
 
 /**
  * Template class implements SSD1327 128x128 lcd display in 4 bit mode over custom SPI implementation
@@ -242,6 +250,7 @@ public:
 private:
     InterfaceSSD1327<I> m_spi;
 };
+#ifdef CONFIG_LCDGFX_PLATFORM_I2C
 /**
  * Class implements SSD1327 128x128 lcd display in 4 bit mode over I2C
  */
@@ -255,11 +264,11 @@ public:
      * @param rstPin pin controlling LCD reset (-1 if not used)
      * @param config platform i2c configuration. Please refer to SPlatformI2cConfig.
      */
-    explicit DisplaySSD1327_128x128_I2C(int8_t rstPin, const SPlatformI2cConfig &config = {-1, 0x3C, -1, -1, 0})
+    explicit DisplaySSD1327_128x128_I2C(int8_t rstPin, const SPlatformI2cConfig &config = {-1, 0x3C, -1, -1, 0U})
         : DisplaySSD1327_128x128(m_i2c, rstPin)
         , m_i2c(*this, -1,
                 SPlatformI2cConfig{config.busId, static_cast<uint8_t>(config.addr ?: 0x3C), config.scl, config.sda,
-                                   config.frequency ?: 400000})
+                                   config.frequency ?: 400000U})
     {
     }
 
@@ -276,6 +285,7 @@ public:
 private:
     InterfaceSSD1327<PlatformI2c> m_i2c;
 };
+#endif
 
 /**
  * Template class implements SSD1327 128x128 lcd display in 4 bit mode over custom I2C implementation

@@ -24,6 +24,7 @@
 
 #include "sdl_ili9341.h"
 #include "sdl_oled_basic.h"
+#include "sdl_emulator_common.h"
 #include "sdl_graphics.h"
 #include "sdl_core.h"
 
@@ -33,20 +34,17 @@ static int s_columnStart = 0;
 static int s_columnEnd = 127;
 static int s_pageStart = 0;
 static int s_pageEnd = 7;
-static int s_horizontalLayout = 1;
 static uint8_t detected = 0;
+
+static void sdl_ili9341_reset(void)
+{
+    detected = 0;
+}
 
 static int sdl_ili9341_detect(uint8_t data)
 {
     if (detected)
     {
-        switch (data)
-        {
-            case 0x01:
-                s_horizontalLayout=1;
-                break;
-            default: break;
-        }
         return 1;
     }
     detected = (data == SDL_LCD_ILI9341);
@@ -57,15 +55,6 @@ static uint8_t s_verticalMode = 0;
 
 static void sdl_ili9341_commands(uint8_t data)
 {
-    static uint8_t s_firstStart = 1;
-    if ( s_firstStart && s_horizontalLayout )
-    {
-        sdl_graphics_set_oled_params(sdl_ili9341.height,
-                                     sdl_ili9341.width,
-                                     sdl_ili9341.bpp,
-                                     sdl_ili9341.pixfmt);
-        s_firstStart = 0;
-    }
     switch (s_commandId)
     {
         case 0x36:
@@ -181,6 +170,64 @@ static void sdl_ili9341_commands(uint8_t data)
             sdl_set_data_mode( SDM_WRITE_DATA );
             s_commandId = SSD_COMMAND_NONE;
             break;
+        // 1-arg config commands: consume argument to avoid misinterpretation
+        case 0x26: // Gamma Set
+        case 0x3A: // Pixel Format Set
+        case 0x51: // Write Brightness
+        case 0x53: // Write CTRL Display
+        case 0x55: // Write Content Adaptive Brightness
+        case 0xF6: // Interface Control (often 1 arg variant)
+            if ( s_cmdArgIndex == 0 )
+            {
+                s_commandId = SSD_COMMAND_NONE;
+            }
+            break;
+        case 0xB1: // Frame Rate Control (2 args)
+        case 0xB5: // Blanking Porch Control (2 args)
+        case 0xB6: // Display Function Control (2 args)
+            if ( s_cmdArgIndex == 1 )
+            {
+                s_commandId = SSD_COMMAND_NONE;
+            }
+            break;
+        case 0xC0: // Power Control 1 (2 args)
+        case 0xC1: // Power Control 2 (2 args)
+            if ( s_cmdArgIndex == 1 )
+            {
+                s_commandId = SSD_COMMAND_NONE;
+            }
+            break;
+        case 0xC5: // VCOM Control (2 args)
+            if ( s_cmdArgIndex == 1 )
+            {
+                s_commandId = SSD_COMMAND_NONE;
+            }
+            break;
+        case 0xC7: // VCOM Offset (1 arg)
+            if ( s_cmdArgIndex == 0 )
+            {
+                s_commandId = SSD_COMMAND_NONE;
+            }
+            break;
+        case 0xE0: // Positive Gamma Correction (15 args)
+        case 0xE1: // Negative Gamma Correction (15 args)
+            if ( s_cmdArgIndex == 14 )
+            {
+                s_commandId = SSD_COMMAND_NONE;
+            }
+            break;
+        case 0xCB: // Power Control A (5 args)
+            if ( s_cmdArgIndex == 4 )
+            {
+                s_commandId = SSD_COMMAND_NONE;
+            }
+            break;
+        case 0xCF: // Power Control B (3 args)
+            if ( s_cmdArgIndex == 2 )
+            {
+                s_commandId = SSD_COMMAND_NONE;
+            }
+            break;
         default:
             s_commandId = SSD_COMMAND_NONE;
             break;
@@ -192,8 +239,8 @@ void sdl_ili9341_data(uint8_t data)
 {
     int y = s_activePage;
     int x = s_activeColumn;
-    static uint8_t firstByte = 1;  /// ili9341
-    static uint8_t dataFirst = 0x00;  /// ili9341
+    static uint8_t firstByte = 1;
+    static uint8_t dataFirst = 0x00;
     if (firstByte)
     {
         dataFirst = data;
@@ -212,37 +259,14 @@ void sdl_ili9341_data(uint8_t data)
         rx = (s_verticalMode & 0b10000000) ? x: (sdl_ili9341.width - 1 - x);
         ry = (s_verticalMode & 0b01000000) ? (sdl_ili9341.height - 1 - y) : y;
     }
-    if ( s_horizontalLayout )
-        sdl_put_pixel(sdl_ili9341.height - ry - 1, rx, (dataFirst<<8) | data);
-    else
+    if ( rx >= 0 && ry >= 0 && rx < sdl_ili9341.width && ry < sdl_ili9341.height )
+    {
         sdl_put_pixel(rx, ry, (dataFirst<<8) | data);
+    }
 
-    if (s_verticalMode & 0b00100000)
-    {
-        s_activePage++;
-        if (s_activePage > s_pageEnd)
-        {
-            s_activePage = s_pageStart;
-            s_activeColumn++;
-            if (s_activeColumn > s_columnEnd)
-            {
-                s_activeColumn = s_columnStart;
-            }
-        }
-    }
-    else
-    {
-        s_activeColumn++;
-        if (s_activeColumn > s_columnEnd)
-        {
-            s_activeColumn = s_columnStart;
-            s_activePage++;
-            if (s_activePage > s_pageEnd)
-            {
-                s_activePage = s_pageStart;
-            }
-        }
-    }
+    sdl_emu_advance_xy(&s_activeColumn, &s_activePage,
+                       s_columnStart, s_columnEnd, s_pageStart, s_pageEnd,
+                       s_verticalMode & 0x20);
 }
 
 sdl_oled_info sdl_ili9341 =
@@ -255,4 +279,5 @@ sdl_oled_info sdl_ili9341 =
     .detect = sdl_ili9341_detect,
     .run_cmd = sdl_ili9341_commands,
     .run_data = sdl_ili9341_data,
+    .reset = sdl_ili9341_reset,
 };
