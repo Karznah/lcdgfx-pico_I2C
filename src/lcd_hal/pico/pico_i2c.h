@@ -23,17 +23,16 @@
 */
 
 /*
- * @file hal/pico/pico_i2c.h LCDGFX Raspberry Pi Pico Dummy !!! Interface
+ * @file hal/pico/pico_i2c.h LCDGFX Raspberry Pi Pico Interface communication functions
  */
 
-// !!!!! WARNING !!!!!!
-// This is a dummy implementation that does not work !!!
-
 #pragma once
+
 
 #if defined(PICO_BOARD)
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
+
 
 #if defined(PICO_USE_I2C1)
 #define PICO_I2C i2c1
@@ -41,19 +40,46 @@
 #define PICO_I2C i2c0
 #endif
 
+#ifndef PICO_I2C_DEFAULT_SDA
+#define PICO_I2C_DEFAULT_SDA 4
+#endif
+
+#ifndef PICO_I2C_DEFAULT_SCL
+#define PICO_I2C_DEFAULT_SCL 5
+#endif
+
+#ifndef PICO_I2C_FREQUENCY
+/** i2c bus frequency in HZ to use, if frequency is not specified by user */
+#define PICO_I2C_FREQUENCY 400000
+#endif
+#ifndef PICO_I2C_BUFFER_SIZE
+
+
 /**
- * Class implements i2c support for Pico using C/C++ SDK
+ * Size of internal transmission buffer. The bytes, passed to the display between
+ * start() and stop() calls, are accumulated in that buffer and are sent to the bus
+ * as a single i2c transmission. Default size holds the full 128x64 display content
+ * (1024 bytes) and the control byte, preceding it.
+ */
+#define PICO_I2C_BUFFER_SIZE 1025
+#endif
+
+/**
+ * Class implements i2c support for Raspberry Pi Pico platform
  */
 class PicoI2c
 {
 public:
     /**
-     * Creates i2c implementation instance for Pico platform.
-     * @param scl clock pin to use for i2c
-     * @param sda data pin to use for i2c
-     * @param sa i2c address of the device to control over i2c
+     * Creates i2c implementation instance for Raspberry Pi Pico platform.
+     * @param scl clock pin to use for i2c, -1 to use PICO_I2C_DEFAULT_SCL pin
+     * @param sda data pin to use for i2c, -1 to use PICO_I2C_DEFAULT_SDA pin
+     * @param sa i2c address of the device to control over i2c (7 bits)
+     * @param frequency frequency in HZ to run i2c bus at, 0 to use PICO_I2C_FREQUENCY
+     *
+     * @note scl and sda pins must belong to the same hardware block.
      */
-    explicit PicoI2c(int8_t scl = -1, int8_t sda = -1, uint8_t sa = 0x00);
+    explicit PicoI2c(int8_t scl = -1, int8_t sda = -1, uint8_t sa = 0x00, uint32_t freq = 0);
     ~PicoI2c();
 
     /**
@@ -110,6 +136,10 @@ private:
     int8_t m_sda;
     uint8_t m_sa;
     uint8_t m_mode;
+    uint32_t m_frequency;
+    i2c_inst_t *m_i2c = PICO_I2C;
+    uint16_t m_dataSize = 0;
+    uint8_t m_buffer[PICO_I2C_BUFFER_SIZE]{};
 };
 
 #endif

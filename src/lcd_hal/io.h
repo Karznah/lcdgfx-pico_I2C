@@ -511,7 +511,7 @@ public:
      * @param config i2c platform configuration. Refer to SPlatformI2cConfig.
      */
     explicit PlatformI2c(const SPlatformI2cConfig &config)
-        : PicoI2c(config.scl, config.sda, config.addr)
+        : PicoI2c(config.scl, config.sda, config.addr, config.frequency)
     {
     }
 };

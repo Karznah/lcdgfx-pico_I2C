@@ -25,24 +25,16 @@
 #include "../io.h"
 
 #if defined(PICO_BOARD)
-#include "pico_i2c.h"
-
-// !!!!! WARNING !!!!!!
-// This is a dummy implementation that does not work !!!
-#warning "I2C is not implemented for Pico board - this is a dummy"
-
-
 //////////////////////////////////////////////////////////////////////////////////
-//                        ARDUINO I2C IMPLEMENTATION
+//                        PI PICO I2C IMPLEMENTATION
 //////////////////////////////////////////////////////////////////////////////////
 
-static uint8_t s_bytesWritten = 0;
-
-PicoI2c::PicoI2c(int8_t scl, int8_t sda, uint8_t sa)
+PicoI2c::PicoI2c(int8_t scl, int8_t sda, uint8_t sa, uint32_t frequency)
     : m_scl(scl)
     , m_sda(sda)
     , m_sa(sa)
     , m_mode(0)
+    , m_frequency(frequency)
 {
 }
 
@@ -52,38 +44,80 @@ PicoI2c::~PicoI2c()
 
 void PicoI2c::begin()
 {
+    if(m_sda < 0)
+        m_sda = PICO_I2C_DEFAULT_SDA;
+    if(m_scl < 0)
+        m_scl = PICO_I2C_DEFAULT_SCL;
+    if(m_frequency == 0)
+        m_frequency = PICO_I2C_FREQUENCY;
+    m_i2c = PICO_I2C;
 
-    i2c_init(PICO_I2C, 100.000);
+    i2c_init(m_i2c, m_frequency);
+    gpio_set_function(m_sda, GPIO_FUNC_I2C);
+    gpio_set_function(m_scl, GPIO_FUNC_I2C);
+    // most display modules have external pull-ups, internal ones do not harm
+    gpio_pull_up(m_sda);
+    gpio_pull_up(m_scl);
 }
 
 void PicoI2c::end()
 {
-    i2c_deinit(PICO_I2C);
+    m_dataSize = 0;
+    i2c_deinit(m_i2c);
 }
 
 void PicoI2c::start()
 {
+    m_dataSize = 0;
 }
 
 void PicoI2c::stop()
 {
+    if(m_dataSize)
+    {
+        /* Error code is ignored on purpose: there is nothing to recover here, and *
+         * the hardware generates STOP condition itself, when transfer is aborted. */
+        i2c_write_blocking(m_i2c, m_sa, m_buffer, m_dataSize, false);
+    }
+    m_dataSize = 0;
 }
 
 void PicoI2c::send(uint8_t data)
 {
-    i2c_write_blocking(PICO_I2C, m_sa, &data, 1, false);
+    if(m_dataSize >= sizeof(m_buffer))
+    {
+        /* Send function puts all data to internal buffer. Restart transmission, *
+         * if internal buffer is full, repeating control byte, so the display    *
+         * continues to receive the data of the same type.                       */
+        stop();
+        start();
+        send(m_mode);
+    }
+    if(m_dataSize == 0)
+        m_mode = data;
+    m_buffer[m_dataSize++] = data;
 }
 
 void PicoI2c::sendBuffer(const uint8_t *buffer, uint16_t size)
 {
-    if(i2c_get_write_available(PICO_I2C) >= size)
+    while(size)
     {
-        i2c_write_blocking(PICO_I2C, m_sa, buffer, size, false);
-    } else
-    {
-        #warning "attempting to write more data than buffer space"
+        if(m_dataSize >= sizeof(m_buffer))
+        {
+            stop();
+            start();
+            send(m_mode);
+        }
+        if(m_dataSize == 0)
+            m_mode = *buffer;
+        uint16_t chunk = static_cast<uint16_t>(sizeof(m_buffer) - m_dataSize);
+        if(chunk > size)
+            chunk = size;
+        memcpy(&m_buffer[m_dataSize], buffer, chunk);
+        m_dataSize += chunk;
+        buffer += chunk;
+        size -= chunk;
     }
 }
-
 
 #endif // PICO_BOARD
